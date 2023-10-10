@@ -72,13 +72,11 @@ public class Problem7 {
 
             if(!intersection.isEmpty()){//갯수만큼 *10증가 시킨다.
 
-                //이미 점수가 있으면 거기에 10으로 더한다.
-                if(scores.containsKey(key))
-                    score +=scores.get(key);
-
-                score+=intersection.size()*10;
+             score = scores.getOrDefault(key,0);
+             score+=intersection.size()*10;
+             scores.put(key,score);
             }
-            scores.put(key,score);
+
         }
         return new ArrayList<>(scores.entrySet());
     }

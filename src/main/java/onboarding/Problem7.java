@@ -5,34 +5,12 @@ import java.util.*;
 public class Problem7 {
     public static List<String> solution(String user, List<List<String>> friends, List<String> visitors) {
         List<String> answer = new ArrayList<>();
-        List<Map.Entry<String, Integer>> scores = find_answer(user, friends, visitors);
-        Collections.sort(scores, (entry1, entry2) -> {
-            int scoreCompare =  entry2.getValue().compareTo(entry1.getValue());
-            if(scoreCompare == 0){
-                //점수가 같을 때는 이름 오름차순 정렬.
-                return entry1.getKey().compareTo(entry2.getKey());
-            }
-            return scoreCompare;
-        });
 
-        for(Map.Entry<String, Integer> entry : scores){
-
-            if(entry.getValue()!=0){
-                //만약에 answer크기가 5개 이상이면 추가하지 않고 종료
-                if(answer.size() >=5){
-                    break;
-                }
-                answer.add(entry.getKey());
-            }
-            else if(entry.getValue() == 0 ){
-                break;
-            }
-        }
-        return answer;
+        return find_answer(user,friends,visitors);
     }
 
-    public static List<Map.Entry<String,Integer>> find_answer(String user, List<List<String>> friends, List<String> visitors){
-        Map<String, HashSet<String>> relations = new HashMap<>();
+    public static List<String> find_answer(String user, List<List<String>> friends, List<String> visitors){
+        Map<String, List<String>> relations = new HashMap<>();
         Map<String, Integer> scores = new HashMap<>();
 
 
@@ -47,37 +25,56 @@ public class Problem7 {
             String person1= friend.get(0);
             String person2= friend.get(1);
 
-            relations.putIfAbsent(person1, new HashSet<>());
-            relations.putIfAbsent(person2, new HashSet<>());
+            relations.putIfAbsent(person1,new ArrayList<>());
+            relations.putIfAbsent(person2, new ArrayList<>());
 
             relations.get(person1).add(person2);
             relations.get(person2).add(person1);
         }
 
         //주인공의 관계 출력.
-        HashSet<String> mainPerson = relations.get(user);
 
-        //user와 함께 아는 친구의 수만큼 10*n으로 점수 매겨야 함.
-        for(String key : relations.keySet()){
+        for(String friend: relations.get(user)){
 
-            if(key.equals(user))
-                continue;
-
-            HashSet<String> sub = relations.get(key);// 부 주인공.
-
-            Set<String> intersection = new HashSet<>(mainPerson);
-            intersection.retainAll(sub);
-
-            Integer score =0;//초기 점수는 0
-
-            if(!intersection.isEmpty()){//갯수만큼 *10증가 시킨다.
-
-             score = scores.getOrDefault(key,0);
-             score+=intersection.size()*10;
-             scores.put(key,score);
-            }
-
+            int score= scores.getOrDefault(friend,0);
+            score +=(relations.get(friend).size()-1)*10;
+            scores.put(friend,score);
         }
-        return new ArrayList<>(scores.entrySet());
+
+        // 점수를 내림차순으로 정렬하고, 점수가 같을 경우 이름으로 정렬
+        List<Map.Entry<String, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
+        Collections.sort(sortedScores, (a, b) -> {
+            int scoreComparison = Integer.compare(b.getValue(), a.getValue());
+            if (scoreComparison == 0) {
+                return a.getKey().compareTo(b.getKey());
+            }
+            return scoreComparison;
+        });
+
+        // 상위 5명의 친구 추천
+        List<String> recommendedFriends = new ArrayList<>();
+        for (int i = 0; i < 5 && i < sortedScores.size(); i++) {
+            recommendedFriends.add(sortedScores.get(i).getKey());
+        }
+
+        return recommendedFriends;
+    }
+
+    public static void main(String[] args) {
+        String user = "mrko";
+        List<List<String>> friends = Arrays.asList(
+                Arrays.asList("donut", "andole"),
+                Arrays.asList("donut", "jun"),
+                Arrays.asList("donut", "mrko"),
+                Arrays.asList("shakevan", "andole"),
+                Arrays.asList("shakevan", "jun"),
+                Arrays.asList("shakevan", "mrko")
+        );
+        List<String> visitors = Arrays.asList("bedi", "bedi", "donut", "bedi", "shakevan");
+
+        List<String> result = Problem7.solution(user, friends, visitors);
+
+        // 예상 결과: ["andole", "jun", "bedi"]
+        System.out.println(result);
     }
 }

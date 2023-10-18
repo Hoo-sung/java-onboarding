@@ -2,79 +2,69 @@ package onboarding;
 
 import java.util.*;
 
+import java.util.*;
+
 public class Problem7 {
     public static List<String> solution(String user, List<List<String>> friends, List<String> visitors) {
-        List<String> answer = new ArrayList<>();
 
-        return find_answer(user,friends,visitors);
-    }
+        List<String> answer = Collections.emptyList();
+        // 모든 유저의 친구 관계 저장
+        HashMap<String, ArrayList<String>> friend_map = get_friendsMap(friends);
+        // 추천할 대상과 점수를 저장
+        HashMap<String, Integer> recommand = new HashMap<>();
+        // 추천을 받는 대상(= user)의 친구 관계를 탐색하여 이미 친구인 사람을 저장
+        ArrayList<String> already_friends = friend_map.get(user);
 
-    public static List<String> find_answer(String user, List<List<String>> friends, List<String> visitors){
-        Map<String, List<String>> relations = new HashMap<>();
-        Map<String, Integer> scores = new HashMap<>();
-
-
-        //이제 타임라인에 방문한 홧수만큼 1 증가.
-        for(String visitor: visitors){
-            scores.put(visitor,scores.getOrDefault(visitor,0)+1);
+        // 친구 관계를 탐색하여 이미 친구인 사람 및 자기 자신을 제외하고 추천 대상에 저장해둠.
+        for(String friend : friend_map.keySet()){
+            if(!already_friends.contains(friend) && !friend.equals(user))
+                recommand.put(friend, 10);
         }
 
-        //친구 관계 정리.
-        for(List<String> friend: friends){
-
-            String person1= friend.get(0);
-            String person2= friend.get(1);
-
-            relations.putIfAbsent(person1,new ArrayList<>());
-            relations.putIfAbsent(person2, new ArrayList<>());
-
-            relations.get(person1).add(person2);
-            relations.get(person2).add(person1);
-        }
-
-        //주인공의 관계 출력.
-
-        for(String friend: relations.get(user)){
-
-            int score= scores.getOrDefault(friend,0);
-            score +=(relations.get(friend).size()-1)*10;
-            scores.put(friend,score);
-        }
-
-        // 점수를 내림차순으로 정렬하고, 점수가 같을 경우 이름으로 정렬
-        List<Map.Entry<String, Integer>> sortedScores = new ArrayList<>(scores.entrySet());
-        Collections.sort(sortedScores, (a, b) -> {
-            int scoreComparison = Integer.compare(b.getValue(), a.getValue());
-            if (scoreComparison == 0) {
-                return a.getKey().compareTo(b.getKey());
+        // 방문자 목록을 탐색하여 이미 친구인 사람 및 자기 자신을 제외하고 추천 대상에 저장해둔다.
+        for(String visitor : visitors){
+            if(!already_friends.contains(visitor) && !visitor.equals(user)){
+                if(recommand.containsKey(visitor))
+                    recommand.put(visitor, recommand.get(visitor) + 1);
+                else recommand.put(visitor, 1);
             }
-            return scoreComparison;
-        });
-
-        // 상위 5명의 친구 추천
-        List<String> recommendedFriends = new ArrayList<>();
-        for (int i = 0; i < 5 && i < sortedScores.size(); i++) {
-            recommendedFriends.add(sortedScores.get(i).getKey());
         }
 
-        return recommendedFriends;
+        // 점수를 기준으로 내림차순하여 결과에 저장해둔다.
+        answer = sort_recommand(recommand);
+
+        return answer;
+    }
+    // 추천 점수 테이블에 대한 내림차순 정렬
+    private static ArrayList<String> sort_recommand(HashMap<String, Integer> recommand){
+
+        ArrayList<String> result = new ArrayList<>();
+
+        List<Map.Entry<String, Integer>> entries = new ArrayList<>(recommand.entrySet());
+
+        Collections.sort(entries, (o1, o2) -> o2.getValue().compareTo(o1.getValue()));//내림차순 정렬.
+        entries.forEach(entry -> result.add(entry.getKey()));
+
+        return result;
     }
 
-    public static void main(String[] args) {
-        String user = "mrko";
-        List<List<String>> friends = Arrays.asList(
-                Arrays.asList("donut", "andole"),
-                Arrays.asList("donut", "jun"),
-                Arrays.asList("donut", "mrko"),
-                Arrays.asList("shakevan", "andole"),
-                Arrays.asList("shakevan", "jun"),
-                Arrays.asList("shakevan", "mrko")
-        );
-        List<String> visitors = Arrays.asList("bedi", "bedi", "donut", "bedi", "shakevan");
+    // 모든 유저의 친구 관계를 Map에 저장
+    private static HashMap<String, ArrayList<String>> get_friendsMap(List<List<String>> friends){
+        HashMap<String, ArrayList<String>> friend_map = new HashMap<>();
 
-        List<String> result = Problem7.solution(user, friends, visitors);
+        for(List<String> friend : friends){
+            if(!friend_map.containsKey(friend.get(0))) {
+                friend_map.put(friend.get(0), new ArrayList<>());
+                friend_map.get(friend.get(0)).add(friend.get(1));
+            }
+            else friend_map.get(friend.get(0)).add(friend.get(1));
 
-        // 예상 결과: ["andole", "jun", "bedi"]
-        System.out.println(result);
+            if(!friend_map.containsKey(friend.get(1))){
+                friend_map.put(friend.get(1), new ArrayList<>());
+                friend_map.get(friend.get(1)).add(friend.get(0));
+            }
+            else friend_map.get(friend.get(1)).add(friend.get(0));
+        }
+        return friend_map;
     }
 }
